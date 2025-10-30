@@ -238,6 +238,7 @@ templex/
 │   └── sidebar.html
 │
 ├── src/
+|   ├── assets/
 │   ├── common/
 │   │   ├── components/
 │   │   │   ├── Button/
@@ -252,11 +253,13 @@ templex/
 │   │   │   └── Toast/
 │   │   │       ├── Toast.tsx
 │   │   │       └── Toast.module.css
+│   │   ├── theme/
+│   │   │   ├── ThemeProvider.tsx
 │   │   ├── hooks/
 │   │   │   ├── useLocalStorage.ts
+│   │   │   ├── useTheme.ts
 │   │   │   └── useKeyboardShortcut.ts
 │   │   └── utils/
-│   │       ├── tokenCounter.ts
 │   │       └── storage.ts
 │   │
 │   ├── modules/
@@ -293,9 +296,10 @@ templex/
 │   │       └── useSettings.ts
 │   │
 │   ├── sidepanel/
-│   │   ├── App.tsx
-│   │   ├── App.module.css
-│   │   └── index.tsx
+│   │   ├── Sidebar.tsx
+│   │   ├── Sidebar.module.css
+|   |   ├── main.tsx
+│   │   └── index.css
 │   │
 │   ├── background/
 │   │   └── background.ts
@@ -309,7 +313,8 @@ templex/
 ├── tsconfig.json
 ├── vite.config.ts
 └── package.json
-text### System Architecture
+
+### System Architecture
 
 - **Framework:** React + TypeScript
 - **State Management:** React Hooks (`useContext`, `useState`, `useReducer`)
