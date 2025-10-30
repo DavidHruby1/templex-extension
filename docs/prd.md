@@ -268,6 +268,8 @@ templex/
 │   │   │   │   └── VariableModal.tsx
 │   │   │   ├── hooks/
 │   │   │   │   └── usePrompts.ts
+|   │   │   ├── utils/
+|   │   │   │   └── tokenCounter.ts
 │   │   │   ├── prompts.module.css
 │   │   │   └── types.ts
 │   │   │
