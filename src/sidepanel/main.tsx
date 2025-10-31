@@ -6,5 +6,5 @@ import Sidebar from '../Sidebar.tsx'
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Sidebar />
-  </StrictMode>,
+  </StrictMode>
 )
