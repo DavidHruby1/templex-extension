@@ -1,0 +1,1184 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+<additional_info>
+
+</additional_info>
+
+</file_summary>
+
+<directory_structure>
+.gitignore
+docs/implementation.md
+docs/prd.md
+eslint.config.js
+index.html
+LICENSE
+package.json
+public/manifest.json
+public/sidebar.html
+README.md
+src/assets/arrow-right-from-line.svg
+src/assets/circle-plus.svg
+src/assets/copy.svg
+src/assets/ellipsis.svg
+src/assets/file.svg
+src/assets/folder-plus.svg
+src/assets/folder-tree.svg
+src/assets/chevron-down.svg
+src/assets/chevron-right.svg
+src/assets/import.svg
+src/assets/layers-2.svg
+src/assets/pen-line.svg
+src/assets/react.svg
+src/assets/search.svg
+src/assets/settings.svg
+src/assets/syringe.svg
+src/assets/trash-2.svg
+src/assets/x.svg
+src/sidepanel/index.css
+src/sidepanel/main.tsx
+src/sidepanel/Sidebar.tsx
+tsconfig.app.json
+tsconfig.json
+tsconfig.node.json
+vite.config.ts
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path=".gitignore">
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+</file>
+
+<file path="docs/implementation.md">
+# Project Architecture (Implementation Plan)
+
+This document outlines the final, step-by-step implementation plan for the Chrome extension, including a "Definition of Done" (DoD) for each phase.
+
+---
+
+## Step 1: Basic Project and Manifest Setup
+
+*Build the technical "skeleton" of the extension.*
+
+* **Project Creation:** Initialize the project (`Vite` + `React` + `TypeScript`).
+* **`manifest.json` Setup:**
+    * Permissions: `storage`, `contextMenus`, `activeTab`, `scripting`.
+    * `background`: Define `background.ts`.
+    * `content_scripts`: Define `content.ts`.
+    * `web_accessible_resources`: Make `sidebar.html` accessible so the `<iframe>` can load it.
+    * `action`: Define the icon for `chrome.action.onClicked`.
+* **HTML Files:** Set up `sidebar.html` as the main entry point for the React application.
+* **Absolute Paths:** Set up absolute paths in the Vite config file
+
+### Definition of Done (DoD)
+
+The project builds successfully, loads into Chrome (in developer mode), and an empty `<iframe>` appears on the page after clicking the extension icon.
+
+---
+
+## Step 2: Data Layer and API Abstraction
+
+*Define the application's "brain" and how it communicates with the world (Chrome APIs and storage).*
+
+* **Type Definitions:** Create global types (in `src/types/index.ts`) for `Prompt` and `Folder`.
+* **Storage Wrapper:** Create `storage.ts` (in `src/common/utils/`) wrapping `chrome.storage.local`.
+* **Chrome API Wrapper:** Create `chromeMessaging.ts` (in `src/common/utils/`) as a type-safe wrapper for `chrome.runtime.sendMessage` and `chrome.tabs.sendMessage`.
+* **Centralized Hooks (SSoT):** Create Single Source of Truth hooks at the module level:
+    * `src/modules/prompts/hooks/usePrompts.ts`
+    * `src/modules/folders/hooks/useFolders.ts`
+    * These hooks will contain all CRUD logic and be the only place that calls `storage.ts`.
+* **Context Provider:** Wrap the entire React application in providers that supply these hooks.
+* **Tests:** Write unit tests for `storage.ts` and `chromeMessaging.ts`. Mock the `chrome.storage` and `chrome.runtime` APIs (per Rule 3.7, we test our wrapper, not Chrome).
+
+### Definition of Done (DoD)
+
+The `usePrompts` and `useFolders` hooks return mock data. The `storage.ts` and `chromeMessaging.ts` wrappers are unit-tested (with mocks).
+
+---
+
+## Step 3: Core UI, Layout, and Robustness
+
+*Build the UI "skeleton" and reusable elements.*
+
+* **Layout Component:** Create `src/sidepanel/layouts/SidebarLayout.tsx`. It will manage "page" transitions (animated transitions between the main list, editor, and settings) and render persistent elements (like a "Back" button).
+* **Error Boundary:** Create `src/common/components/ErrorBoundary/ErrorBoundary.tsx`. Use it in `SidebarLayout.tsx` to wrap the active "page," so an error in one module doesn't crash the entire panel.
+* **Common Components:** Create `Button`, `Input`, `Modal`, etc., in `src/common/components/`. Each will have strict co-location (`Button.tsx`, `Button.module.css`, `Button.test.tsx`).
+* **Main UI (Read-Only):** Build `PromptList.tsx` and `FolderTree.tsx`. Connect them to the hooks from Step 2 and display static data.
+
+### Definition of Done (DoD)
+
+All common components exist and have tests. `SidebarLayout` renders, and the `ErrorBoundary` correctly catches a test error. The list of prompts is displayed (read-only).
+
+---
+
+## Step 4: CRUD Implementation and Domain Logic
+
+*Bring the application to life and implement business logic in the correct places.*
+
+* **Editor:** Implement `PromptEditor.tsx`. Start with local hooks (e.g., `usePromptEditor.ts`) directly in the component's folder, as per Rule 1.9.
+* **Token Counter:** Create `tokenCounter.ts` in `src/modules/prompts/utils/` (not in `common`!). This is domain-specific logic for prompts.
+* **Deletion:** Add deletion logic (including a confirmation modal) connected to `usePrompts` and `useFolders`.
+* **Drag and Drop:** Implement D&D (per PRD Feature 4). Wrap the library logic (e.g., `dnd-kit`) in a domain-specific hook in `src/modules/prompts/hooks/`.
+
+### Definition of Done (DoD)
+
+The user can create, edit, and delete a prompt/folder. The token count is displayed. Drag and drop for prompts into folders works. All actions are saved to storage.
+
+---
+
+## Step 5: Browser Integration
+
+*Connect the React application with the background and content scripts.*
+
+* **Handling in `background.ts`:** Create `src/background/handlers/` (e.g., `onToggleSidebar.ts`, `onInjectPrompt.ts`). The main `background.ts` will just be a router that calls the appropriate handler based on the message type (from `chromeMessaging.ts`).
+* **Keyboard Shortcuts (Global):** The main `background.ts` will also listen to `chrome.commands.onCommand` (e.g., for 'toggle-sidebar') and call the relevant handler.
+* **`content_script.ts`:** Will use `chromeMessaging.ts` to listen for commands (like "DO_INJECT") and to inject buttons ("Add prompt") into the DOM.
+
+### Definition of Done (DoD)
+
+Clicking 'Inject' in the React UI inserts text into the active window. A global keyboard shortcut (from `chrome.commands`) opens/closes the panel.
+
+---
+
+## Step 6: Advanced Features and Local Shortcuts
+
+*Finalize module-specific features.*
+
+* **`VariableModal` (per Rule 1.11):** Implement the logic for variables:
+    * UI: `src/modules/prompts/components/VariableModal/VariableModal.tsx`
+    * Business Logic: `src/modules/prompts/utils/variableParser.ts` (for extracting and validating `[[variable]]`).
+    * Glue: `src/modules/prompts/hooks/useVariableExtraction.ts`.
+* **Search (per Rule of Three):** Implement search. The component is module-specific, not in `common`:
+    * UI: `src/modules/prompts/components/SearchBar/SearchBar.tsx`.
+    * Logic: `src/modules/prompts/hooks/useSearch.ts`.
+* **Keyboard Shortcuts (Local):** Create `src/common/hooks/useKeyboardShortcut.ts` for local shortcuts within the sidebar (e.g., 'Esc' to close a modal, 'Ctrl+F' to focus the `SearchBar`).
+* **Settings Page:** Implement the `settings` module (`src/modules/settings/`).
+
+### Definition of Done (DoD)
+
+Search filters prompts and folders. Injecting a prompt with a variable displays the `VariableModal`. Local keyboard shortcuts ('Esc', 'Ctrl+F') work within the sidebar.
+
+---
+
+## Step 7: Testing (Integration and E2E)
+
+*Ensure the quality of the final product.*
+
+* **Unit Tests:** Were written continuously (co-located) for utilities, hooks, and components.
+* **Integration Tests:** Write integration tests (using Testing Library) for complete user flows.
+    * **Happy Path (Rule 3.4):** "Open panel -> Add prompt -> Fill form -> Save -> Find in list -> Inject".
+    * **Edge Cases (Rule 3.5):** "Save empty prompt (validation)", "Delete folder with prompts (confirmation)", "Injection failure (toast notification)".
+* **Recommended E2E Tests:** Use Puppeteer or Playwright with the extension loaded. Test the full flow that unit/integration tests cannot:
+    * Click the extension icon in the Chrome toolbar.
+    * Verify the `<iframe>` appears on the page (e.g., ChatGPT).
+    * Click a prompt in the sidebar.
+    * Verify the text actually appeared in the text field on the host page.
+
+### Definition of Done (DoD)
+
+All main "Happy Path" scenarios are covered by integration tests. An E2E test proves that the core functionality (injection) works in a real browser environment.
+</file>
+
+<file path="eslint.config.js">
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import tseslint from 'typescript-eslint'
+import { defineConfig, globalIgnores } from 'eslint/config'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      js.configs.recommended,
+      tseslint.configs.recommended,
+      reactHooks.configs['recommended-latest'],
+      reactRefresh.configs.vite,
+    ],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
+    },
+  },
+])
+</file>
+
+<file path="index.html">
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>templex</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+</file>
+
+<file path="LICENSE">
+MIT License
+
+Copyright (c) 2025 David Hrubý
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</file>
+
+<file path="package.json">
+{
+  "name": "templex",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.36.0",
+    "@types/node": "^24.6.0",
+    "@types/react": "^19.1.16",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.4",
+    "eslint": "^9.36.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.22",
+    "globals": "^16.4.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.45.0",
+    "vite": "^7.1.7"
+  }
+}
+</file>
+
+<file path="public/sidebar.html">
+<!doctype html>
+<html lang="cs">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Templex</title>
+        <link rel="stylesheet" href="index.css" />
+    </head>
+    <body>
+        <div id="root"></div>
+        <script type="module" src="main.js"></script>
+    </body>
+</html>
+</file>
+
+<file path="README.md">
+# React + TypeScript + Vite
+
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+
+Currently, two official plugins are available:
+
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+
+## React Compiler
+
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
+
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
+
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
+</file>
+
+<file path="src/assets/arrow-right-from-line.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right-from-line-icon lucide-arrow-right-from-line"><path d="M3 5v14"/><path d="M21 12H7"/><path d="m15 18 6-6-6-6"/></svg>
+</file>
+
+<file path="src/assets/circle-plus.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-plus-icon lucide-circle-plus"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
+</file>
+
+<file path="src/assets/copy.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy-icon lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+</file>
+
+<file path="src/assets/ellipsis.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ellipsis-icon lucide-ellipsis"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+</file>
+
+<file path="src/assets/file.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-icon lucide-file"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+</file>
+
+<file path="src/assets/folder-plus.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-folder-plus-icon lucide-folder-plus"><path d="M12 10v6"/><path d="M9 13h6"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+</file>
+
+<file path="src/assets/folder-tree.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-folder-tree-icon lucide-folder-tree"><path d="M20 10a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2.5a1 1 0 0 1-.8-.4l-.9-1.2A1 1 0 0 0 15 3h-2a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1Z"/><path d="M20 21a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1h-2.9a1 1 0 0 1-.88-.55l-.42-.85a1 1 0 0 0-.92-.6H13a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1Z"/><path d="M3 5a2 2 0 0 0 2 2h3"/><path d="M3 3v13a2 2 0 0 0 2 2h3"/></svg>
+</file>
+
+<file path="src/assets/chevron-down.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down-icon lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
+</file>
+
+<file path="src/assets/chevron-right.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right-icon lucide-chevron-right"><path d="m9 18 6-6-6-6"/></svg>
+</file>
+
+<file path="src/assets/import.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-import-icon lucide-import"><path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M8 5H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4"/></svg>
+</file>
+
+<file path="src/assets/layers-2.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layers2-icon lucide-layers-2"><path d="M13 13.74a2 2 0 0 1-2 0L2.5 8.87a1 1 0 0 1 0-1.74L11 2.26a2 2 0 0 1 2 0l8.5 4.87a1 1 0 0 1 0 1.74z"/><path d="m20 14.285 1.5.845a1 1 0 0 1 0 1.74L13 21.74a2 2 0 0 1-2 0l-8.5-4.87a1 1 0 0 1 0-1.74l1.5-.845"/></svg>
+</file>
+
+<file path="src/assets/pen-line.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pen-line-icon lucide-pen-line"><path d="M13 21h8"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg>
+</file>
+
+<file path="src/assets/react.svg">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="35.93" height="32" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 228"><path fill="#00D8FF" d="M210.483 73.824a171.49 171.49 0 0 0-8.24-2.597c.465-1.9.893-3.777 1.273-5.621c6.238-30.281 2.16-54.676-11.769-62.708c-13.355-7.7-35.196.329-57.254 19.526a171.23 171.23 0 0 0-6.375 5.848a155.866 155.866 0 0 0-4.241-3.917C100.759 3.829 77.587-4.822 63.673 3.233C50.33 10.957 46.379 33.89 51.995 62.588a170.974 170.974 0 0 0 1.892 8.48c-3.28.932-6.445 1.924-9.474 2.98C17.309 83.498 0 98.307 0 113.668c0 15.865 18.582 31.778 46.812 41.427a145.52 145.52 0 0 0 6.921 2.165a167.467 167.467 0 0 0-2.01 9.138c-5.354 28.2-1.173 50.591 12.134 58.266c13.744 7.926 36.812-.22 59.273-19.855a145.567 145.567 0 0 0 5.342-4.923a168.064 168.064 0 0 0 6.92 6.314c21.758 18.722 43.246 26.282 56.54 18.586c13.731-7.949 18.194-32.003 12.4-61.268a145.016 145.016 0 0 0-1.535-6.842c1.62-.48 3.21-.974 4.76-1.488c29.348-9.723 48.443-25.443 48.443-41.52c0-15.417-17.868-30.326-45.517-39.844Zm-6.365 70.984c-1.4.463-2.836.91-4.3 1.345c-3.24-10.257-7.612-21.163-12.963-32.432c5.106-11 9.31-21.767 12.459-31.957c2.619.758 5.16 1.557 7.61 2.4c23.69 8.156 38.14 20.213 38.14 29.504c0 9.896-15.606 22.743-40.946 31.14Zm-10.514 20.834c2.562 12.94 2.927 24.64 1.23 33.787c-1.524 8.219-4.59 13.698-8.382 15.893c-8.067 4.67-25.32-1.4-43.927-17.412a156.726 156.726 0 0 1-6.437-5.87c7.214-7.889 14.423-17.06 21.459-27.246c12.376-1.098 24.068-2.894 34.671-5.345a134.17 134.17 0 0 1 1.386 6.193ZM87.276 214.515c-7.882 2.783-14.16 2.863-17.955.675c-8.075-4.657-11.432-22.636-6.853-46.752a156.923 156.923 0 0 1 1.869-8.499c10.486 2.32 22.093 3.988 34.498 4.994c7.084 9.967 14.501 19.128 21.976 27.15a134.668 134.668 0 0 1-4.877 4.492c-9.933 8.682-19.886 14.842-28.658 17.94ZM50.35 144.747c-12.483-4.267-22.792-9.812-29.858-15.863c-6.35-5.437-9.555-10.836-9.555-15.216c0-9.322 13.897-21.212 37.076-29.293c2.813-.98 5.757-1.905 8.812-2.773c3.204 10.42 7.406 21.315 12.477 32.332c-5.137 11.18-9.399 22.249-12.634 32.792a134.718 134.718 0 0 1-6.318-1.979Zm12.378-84.26c-4.811-24.587-1.616-43.134 6.425-47.789c8.564-4.958 27.502 2.111 47.463 19.835a144.318 144.318 0 0 1 3.841 3.545c-7.438 7.987-14.787 17.08-21.808 26.988c-12.04 1.116-23.565 2.908-34.161 5.309a160.342 160.342 0 0 1-1.76-7.887Zm110.427 27.268a347.8 347.8 0 0 0-7.785-12.803c8.168 1.033 15.994 2.404 23.343 4.08c-2.206 7.072-4.956 14.465-8.193 22.045a381.151 381.151 0 0 0-7.365-13.322Zm-45.032-43.861c5.044 5.465 10.096 11.566 15.065 18.186a322.04 322.04 0 0 0-30.257-.006c4.974-6.559 10.069-12.652 15.192-18.18ZM82.802 87.83a323.167 323.167 0 0 0-7.227 13.238c-3.184-7.553-5.909-14.98-8.134-22.152c7.304-1.634 15.093-2.97 23.209-3.984a321.524 321.524 0 0 0-7.848 12.897Zm8.081 65.352c-8.385-.936-16.291-2.203-23.593-3.793c2.26-7.3 5.045-14.885 8.298-22.6a321.187 321.187 0 0 0 7.257 13.246c2.594 4.48 5.28 8.868 8.038 13.147Zm37.542 31.03c-5.184-5.592-10.354-11.779-15.403-18.433c4.902.192 9.899.29 14.978.29c5.218 0 10.376-.117 15.453-.343c-4.985 6.774-10.018 12.97-15.028 18.486Zm52.198-57.817c3.422 7.8 6.306 15.345 8.596 22.52c-7.422 1.694-15.436 3.058-23.88 4.071a382.417 382.417 0 0 0 7.859-13.026a347.403 347.403 0 0 0 7.425-13.565Zm-16.898 8.101a358.557 358.557 0 0 1-12.281 19.815a329.4 329.4 0 0 1-23.444.823c-7.967 0-15.716-.248-23.178-.732a310.202 310.202 0 0 1-12.513-19.846h.001a307.41 307.41 0 0 1-10.923-20.627a310.278 310.278 0 0 1 10.89-20.637l-.001.001a307.318 307.318 0 0 1 12.413-19.761c7.613-.576 15.42-.876 23.31-.876H128c7.926 0 15.743.303 23.354.883a329.357 329.357 0 0 1 12.335 19.695a358.489 358.489 0 0 1 11.036 20.54a329.472 329.472 0 0 1-11 20.722Zm22.56-122.124c8.572 4.944 11.906 24.881 6.52 51.026c-.344 1.668-.73 3.367-1.15 5.09c-10.622-2.452-22.155-4.275-34.23-5.408c-7.034-10.017-14.323-19.124-21.64-27.008a160.789 160.789 0 0 1 5.888-5.4c18.9-16.447 36.564-22.941 44.612-18.3ZM128 90.808c12.625 0 22.86 10.235 22.86 22.86s-10.235 22.86-22.86 22.86s-22.86-10.235-22.86-22.86s10.235-22.86 22.86-22.86Z"></path></svg>
+</file>
+
+<file path="src/assets/search.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search-icon lucide-search"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+</file>
+
+<file path="src/assets/settings.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings-icon lucide-settings"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
+</file>
+
+<file path="src/assets/syringe.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-syringe-icon lucide-syringe"><path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5"/><path d="m9 11 4 4"/><path d="m5 19-3 3"/><path d="m14 4 6 6"/></svg>
+</file>
+
+<file path="src/assets/trash-2.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash2-icon lucide-trash-2"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+</file>
+
+<file path="src/assets/x.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+</file>
+
+<file path="src/sidepanel/Sidebar.tsx">
+import { useState } from 'react'
+import './Sidebar.module.css'
+
+function Sidebar() {
+    return <></>;
+}
+
+export default Sidebar
+</file>
+
+<file path="tsconfig.app.json">
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "types": ["vite/client"],
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": ["src"]
+}
+</file>
+
+<file path="tsconfig.json">
+{
+    "files": [],
+    "references": [
+        { "path": "./tsconfig.app.json" },
+        { "path": "./tsconfig.node.json" }
+    ],
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["src/*"],
+            "@components/*": ["src/common/components/*"],
+            "@modules/*": ["src/modules/*"],
+            "@utils/*": ["src/common/utils/*"],
+            "@hooks/*": ["src/common/hooks/*"],
+            "@types/*": ["src/types/*"],
+            "@assets/*": ["src/assets/*"]
+        }
+    }
+}
+</file>
+
+<file path="tsconfig.node.json">
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "types": ["node"],
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": ["vite.config.ts"]
+}
+</file>
+
+<file path="vite.config.ts">
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import { fileURLToPath, URL } from 'node:url'
+
+export default defineConfig({
+    plugins: [react()],
+    resolve: {
+        alias: {
+            '@': fileURLToPath(new URL('/src', import.meta.url)),
+            '@components': fileURLToPath(new URL('/src/common/components', import.meta.url)),
+            '@hooks': fileURLToPath(new URL('/src/common/hooks', import.meta.url)),
+            '@utils': fileURLToPath(new URL('/src/common/utils', import.meta.url)),
+            '@modules': fileURLToPath(new URL('/src/modules', import.meta.url)),
+            '@assets': fileURLToPath(new URL('/src/assets', import.meta.url)),
+            '@types': fileURLToPath(new URL('/src/types', import.meta.url)),
+        },
+    },
+})
+</file>
+
+<file path="public/manifest.json">
+{
+    "manifest_version": 3,
+    "name": "Templex",
+    "version": "0.3.0",
+    "description": "Personal library to manage, store, and quickly use prompts for AI chatbots",
+    "author": "David Hrubý",
+    "permissions": [
+        "storage",
+        "activeTab",
+        "scripting",
+        "contextMenus"
+    ],
+    "host_permissions": [
+        "<all_urls>"
+    ],
+    "background": {
+        "service_worker": "src/background/background.js",
+        "type": "module"
+    },
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["src/content/content.js"],
+            "run_at": "document_idle"
+        }
+    ],
+    "action": {
+        "default_icon": {
+            "16": "icons/icon16.png",
+            "48": "icons/icon48.png",
+            "128": "icons/icon128.png"
+        },
+        "default_title": "Open Templex"
+    },
+    "icons": {
+        "16": "icons/icon16.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
+    },
+    "web_accessible_resources": [
+        {
+            "resources": ["sidebar.html"],
+            "matches": ["<all_urls>"]
+        }
+    ],
+    "commands": {
+        "toggle-sidebar": {
+            "suggested_key": {
+                "default": "Ctrl+Shift+Q",
+                "mac": "Command+Shift+Q"
+            },
+            "description": "Toggle Templex sidebar"
+        },
+        "quick-add-prompt": {
+            "suggested_key": {
+                "default": "Ctrl+Shift+A",
+                "mac": "Command+Shift+A"
+            },
+            "description": "Quick add prompt"
+        },
+        "quick-search": {
+            "suggested_key": {
+                "default": "Ctrl+Shift+F",
+                "mac": "Command+Shift+F"
+            },
+            "description": "Quick search prompts"
+        }
+    }
+}
+</file>
+
+<file path="src/sidepanel/index.css">
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+:root {
+    /* === Font === */
+    --ff: 'Inter', sans-serif;
+
+    --fw-regular: 400;
+    --fw-medium: 500;
+    --fw-semibold: 600;
+    --fw-bold: 700;
+
+    --lh-regular: 1.5;
+
+    /* === Colors === */
+    --color-primary: #0c0c0c;
+    --color-secondary: #171717;
+    --color-text-dark: #8b949e;
+    --color-text-white: #d5d5d5;
+    --color-accent: #58a6ff;
+    --color-accent-dark: #2c5a99;
+    --color-black: #000000;
+
+    /* === Spacing === */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+
+    --br-sm: 0.25rem;
+    --br-md: 0.5rem;
+    --br-lg: 0.75rem;
+    --br-circle: 50%;
+
+
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Default background and color for the app */
+body {
+    background-color: var(--color-primary);
+    color: var(--color-text-white);
+    font-weight: var(--fw-regular);
+    line-height: var(--lh-regular);
+    overflow: hidden;
+}
+
+/* === Reset === */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-family: var(--ff);
+    height: 100%;
+}
+
+body,
+#root {
+    height: 100%;
+}
+
+ul,
+ol {
+    list-style: none;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+    margin: 0;
+}
+button,
+input,
+textarea,
+select {
+    font: inherit;
+    border: none;
+    background: none;
+    color: inherit;
+}
+button {
+    cursor: pointer;
+}
+a {
+    text-decoration: none;
+    color: inherit;
+}
+</file>
+
+<file path="src/sidepanel/main.tsx">
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import Sidebar from './Sidebar.tsx'
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <Sidebar />
+  </StrictMode>
+)
+</file>
+
+<file path="docs/prd.md">
+# Product Requirements Document: Templex
+
+**Name:** Templex  
+**Version:** 0.3  
+**Date:** 28-10-2025  
+
+---
+
+## Executive Summary
+
+This document outlines the requirements for **Templex**, a browser extension that provides users with a personal library to manage, store, and quickly use prompts for AI chatbots. The **Minimum Viable Product (MVP)** will focus on core local storage, intuitive prompt management, and dynamic variable handling to streamline the workflow of frequent AI chatbot users.
+
+---
+
+## Product Overview
+
+### Purpose
+
+The Templex extension is designed to eliminate the repetitive and disorganized process of managing AI prompts. It provides a centralized, browser-integrated solution for saving, categorizing, and reusing prompts, making interactions with AI chatbots faster and more efficient.
+
+### Target Audience
+
+**Primary Users:** Power users of AI chatbots (e.g., ChatGPT, Claude, Gemini), including content creators, developers, researchers, and students who rely on a variety of structured prompts for their work.
+
+### Project Goals
+
+- Launch a functional MVP to the relevant browser web stores that solves the core problem.
+- Establish a foundation for future features like cloud sync and AI-powered enhancements.
+
+### Color Palette
+
+| Name           | Hex       |
+|----------------|-----------|
+| primary        | `#0c0c0c` |
+| secondary      | `#171717` |
+| text-dark      | `#8B949E` |
+| text-white     | `#D5D5D5` |
+| accent         | `#58A6FF` |
+| accent-dark    | `#2C5A99` |
+| black          | `#000000` |
+
+### Font
+
+**Primary:** `Inter`
+
+---
+
+## Problem Statement
+
+### Current State
+
+Frequent chatbot users currently manage their prompts using scattered notes, documents, or spreadsheets. This process is inefficient, leading to time wasted searching for the right prompt and manually editing placeholders or variables for each use case.  
+There is no seamless integration between their prompt storage and the chatbot interface.
+
+### Desired Future State
+
+Users have an instantly accessible library within their browser. They can save a new prompt with a single click, organize it in folders, and reuse it effortlessly. Prompts with variables are handled by a guided workflow, ensuring they are correctly filled out before use, significantly improving speed and reducing errors.
+
+---
+
+## User Personas and Flows
+
+### Persona: Alex, the Content Creator
+
+- **Demographics:** 28, freelance writer.
+- **Goals:** Generate creative blog post ideas, social media captions, and email newsletters using AI. Needs to quickly switch between different prompt structures for different tones and formats.
+- **Pain Points:** Wastes time searching through a messy "Prompts.txt" file. Forgets which variables need to be changed in complex prompts, leading to errors and re-runs.
+- **Technical Proficiency:** Intermediate.
+
+#### User Flows for Alex
+
+**Flow 1: Saving a Discovered Prompt**  
+- Alex finds a good prompt online → Right-click "Add to Templex" → Simple modal appears in the center of a page with Title input → Titles it "Blog Idea Generator" → Presses Enter (or clicks outside) to save
+
+**Flow 2: Using a Prompt with Variables**  
+- Opens extension → Finds "Twitter Post" → Clicks "Inject" → Modal asks for topic + tone → Prompt is injected directly into the chat interface
+
+---
+
+### Persona: David, the Developer
+
+- **Demographics:** 35, Backend Developer.
+- **Goals:** Accelerate development by generating boilerplate code, writing documentation, and refactoring functions.
+- **Pain Points:** Constantly retyping long, complex prompts for code generation and debugging.
+- **Technical Proficiency:** Advanced.
+
+#### User Flows for David
+
+**Flow 1: Iterating and Saving a Utility Prompt**  
+- Crafts multi-step prompt in ChatGPT → Clicks the injected "Save prompt" button above the chat window → Simple modal appears in the center of a page with Title input → Names it "Python function with tests" and presses Enter (or clicks outside) to save → Prompt is instantly available
+
+**Flow 2: Checking the Prompt's Token Count**  
+- Needs to send a prompt to AI → Opens prompt library → Finds "Code Refactoring" prompt → Checks the prompt's token count: 2150 tokens → Confidently proceeds to inject it
+
+---
+
+### Persona: Sarah, the Entrepreneur
+
+- **Demographics:** 42, solo founder of an e-commerce business.
+- **Goals:** Use AI for investor updates, marketing copy, and customer support templates.
+- **Pain Points:** Prompts are scattered across various documents, struggles to track which ones are the most effective.
+- **Technical Proficiency:** Beginner/Intermediate.
+
+#### User Flows for Sarah
+
+**Flow 1: Building a Prompt Library**  
+- Attends webinar → Copies a useful prompt → Presses shortcut to open the side panel → Clicks "Add prompt" → Pastes and titles it "E-commerce Product Description" → Drags the prompt to "Business" folder she got herself set up earlier.
+
+**Flow 2: Filtering & Using a Prompt**  
+- Needs investor update → Opens side panel → Writes "Investor Relations" → It shows only the searched folder → Sees prompts she needs → Clicks "Inject" on "Quarterly Update Summary" → Prompt is pasted directly into the chatbot
+
+---
+
+## Functional Requirements
+
+### Feature 1: Core Library & Side Panel UI
+
+**User Story:** As a user, I want a clean and accessible interface to view and manage my prompts without disrupting my workflow.
+
+**Description:** The extension is implemented as a side panel using an `<iframe>` that loads `sidebar.html`. The iframe is injected into the browser's native side panel container and provides full CSS isolation and compatibility even on pages with strict CSP.
+
+**Acceptance Criteria:**
+
+- [ ] The extension's UI will be implemented using an `<iframe>` with `src="chrome.runtime.getURL('sidebar.html')"` injected into the browser's native side panel container.
+- [ ] The side panel can be opened/toggled by two ways:
+  - Clicking the extension icon in the browser toolbar.
+  - Using a keyboard shortcut the user can bind.
+- [ ] The side panel can be closed by clicking the 'X' button on the browser's panel or using the shortcut again.
+- [ ] There is also a Settings gear icon. Clicking on that will move user to the settings page where user can configure the app.
+- [ ] At the top, there is a Search bar where user can search quick for prompts. It can filter both folders and files. User can also bind a keyboard shortcut to quickly search.
+- [ ] Just below that, there are two buttons: **Add folder**, **Add prompt**:
+  - Adding a folder creates a new folder in the list right away waiting for user to name it. If it's empty and user presses 'Enter' or clicks outside, it will glow red and won't let user escape the editing window. User has to cancel using 'Esc'. 
+  - Adding a prompt moves user to a new page where user can set the title and content of the prompt. This "new prompt" page follows the same interaction model as the "edit prompt" page (described in Feature 3). After the prompt is successfully created and user clicks the 'Back' button, the user is returned to the main list view with the new prompt added at the end of the list.
+  - User can also right-click a folder and choose an 'Add prompt' there so it automatically creates the prompt in the selected folder.
+- [ ] How does the 'moving' between pages work? When clicking on Settings or adding a prompt it starts an animation. The main list view slides out of the iframe content and the new page slides in. There is a 'Back' button that returns user immediately to the main page. The pages are used only for Settings and adding or viewing a prompt.
+- [ ] Prompts are displayed in a list folder > file structure but having folders is not mandatory.
+- [ ] Hovering above folder shows a 'Plus' icon that when clicked, adds a new prompt directly inside the folder associated to that button.
+- [ ] Each folder has a counter showing how many prompts are inside. If > 0, then after clicking on it will unroll the dropdown with the prompts.
+- [ ] Each prompt (file) has a token count on the right side. If you hover above the prompt, an animation occurs sliding the token count out of the way and sliding in the three icons: 'Copy', 'Inject', 'Delete'.
+- [ ] Right-clicking on the folder shows a little modal window with many options like: 'Add folder (yes, nesting folders is possible)', 'Add prompt', 'Duplicate', 'Move folder to...', 'Rename', 'Delete'
+- [ ] Right-clicking on the prompt is similar - it shows extra: 'Open prompt', 'Set as default (This will be covered later)', 'Copy content' and 'Show snippet' which will activate a small popover I'm describing right below this.
+- [ ] Hovering above the prompt file and pressing 'Ctrl + Alt' will show a popover tooltip with a full Title name and a few lines of the content text. If the prompt is longer, a scroll will be available there. It will be below or above the prompt tile (depends on where is more space) so if user wants to interact with the prompt furthermore, he clicks on the tile.
+
+---
+
+### Feature 2: Adding Prompts to the Library
+
+**User Story:** As a user, I want multiple, seamless ways to save prompts without context switching.
+
+**Description:** Users can add prompts from multiple entry points: directly from a webpage, from within a chatbot interface, or manually inside the extension UI.
+
+**Acceptance Criteria:**
+
+- [ ] **Context Menu:** Right-clicking on selected text on any webpage presents an 'Add to Templex' option.
+  - It will show the typical modal with the Title input.
+- [ ] There will also be injected button **"Add prompt"** above the chat window. If a text is written in the chat window, you can create a prompt out of the text. It will normally open the modal with the Title input.
+- [ ] **Manual Prompt Add:** A dedicated 'Add prompt' button is always available within the side panel UI. It will take user once again to the dedicated page using the animation. There is also an option for user to use a shortcut to quickly add prompt or to bind his own shortcut in the Settings. The same goes for adding a folder.
+- [ ] Clicking **'Add folder'** creates an inline element. There is several scenarios:
+  - The text is empty and user presses Enter: Nothing happens, only the border will change color to red for a second.
+  - The text is not empty and user presses Enter: The folder saves.
+  - The text is empty and user clicks out: Same as pressing 'Enter' on the empty text - it will not let the user leave until it is correctly saved or cancelled.
+  - The text is not empty and user clicks out: The folder saves.
+  - The user presses Esc: The creation cancels out.
+- [ ] When title is too long it will be cut and show three dots via the ellipsis effect `text-overflow`. This applies for both folders and prompts.
+  - If you resize the sidebar, it will also make the title longer therefore it can become visible fully.
+- [ ] No prompt or folder can have the same name.
+
+#### UI Logic for Adding Prompts (Clarification)
+
+**Use Case 1: External Triggers (Modal)**  
+*When:* The user is outside the Templex side panel (e.g., browsing a webpage, in a chatbot).  
+*Triggers:* Right-click context menu ("Add to Templex"), Injected "Add prompt" button above a chat window.  
+*UI:* A simple, centered modal is shown. This is a low-friction "quick add" that only asks for a Title (the content is pre-filled from selection/chat input). It does not interrupt the main side panel view.
+
+**Use Case 2: Internal Triggers (Side Panel Page)**  
+*When:* The user is already working inside the Templex side panel.  
+*Triggers:* Clicking the Add prompt button, right-clicking a folder and selecting Add prompt.  
+*UI:* The side panel animates to the "new page" view. This is a "full add" experience where the user can write the Title and Content from scratch. Saving is handled automatically per the model in Feature 3.
+
+**Use Case 3: Plus Icon on Folder**  
+*When:* Hovering above a folder which shows the plus icon.  
+*Triggers:* Clicking the plus icon on the folder.  
+*UI:* The side panel animates to the "new page" view. This is a "full add" experience where the user can write the Title and Content from scratch. Saving is handled automatically. After that, the prompt is automatically added into the folder.
+
+---
+
+### Feature 3: Using & Managing Prompts
+
+**User Story:** As a user, I want to quickly use, edit, and manage my saved prompts directly from the card interface.
+
+**Description:** Each prompt card is an interactive element providing all necessary actions for using and managing the prompt efficiently.
+
+**Acceptance Criteria:**
+
+- [ ] Choosing **'Move to...'** from the right click context menu will open a small modal window in the sidebar showing all the folders available for the move.
+- [ ] Choosing **'Open prompt'** from the right click context menu will move user to the new page using the animation mentioned earlier. User will see the whole prompt on the new page where he can also edit the prompt if needed.
+- [ ] To edit the prompt user can simply left-click on the prompt, it will take him to the new page where he can click again on the Title or content text and it will switch into editing mode.
+  - Changes are saved automatically if a user clicks outside the text area while editing.
+  - Pressing 'Enter' will also save the changes and exit editing mode.
+  - If the user presses 'Esc', it will cancel and revert the changes to what it was before.
+  - If the user clicks on the 'Back' button, it will also cancel the changes and move the user back to the main page list view. It will cancel changes only if it is not saved so if user clicks outside, saves the changes, he is then safe to leave using the 'Back' button.
+  - The prompt's content text **can not stay empty** so if user tries to save it empty, the border will glow red and won't let the user lose focus and escape the page until there's at least one character. If the user deletes all and then presses 'Esc' or 'Back' it will let the user escape the editing mode by reverting to the last known changes back.
+  - This applies to both Title and content text.
+  - One last thing: If the user is creating a completely new prompt file, if he is in the new page and writes 0 characters in either the Title or content text, by pressing the 'Esc' or 'Back' button, the prompt creation will cancel and no prompt will be added.
+- [ ] It was mentioned before - after hovering above the prompt file, it will show three actions: **'Copy'**, **'Inject'**, **'Delete'**.
+  - **Copy:** Copies the prompt's content into clipboard turning the icon green for a second and then returning back to its grey 'text-dark' color.
+  - **Inject:** Pastes the prompt's content text right into the chat.
+  - **Delete:** Shows small modal asking if the user really wants to delete the item. After clicking 'Delete' on the modal, the item will be removed. User can mark the checkbox to not ask again and the modal will stop showing when deleting next items. In Settings he can turn it on again.
+- [ ] If user click **'Delete'** on a folder, all the prompts inside will be deleted too.
+- [ ] **Variable Handling:** If a prompt contains variables in double square brackets (e.g., `[[topic]]`), clicking "Inject" first opens a modal. The modal prompts the user to fill in values for each variable before the final text is processed and injected.
+- [ ] **Set as Default:** Setting a prompt as default will save it in the 'Default prompt' button injected on the AI website. If a user wants to quickly paste a prompt on multiple AI pages, this is the right feature to do it.
+
+---
+
+### Feature 4: Organization
+
+**User Story:** As a user, I want to search, and filter my prompts so I can find the right one instantly.
+
+**Description:** The library supports a powerful organization system with a search bar and sorting options to effectively manage a large collection of prompts.
+
+**Acceptance Criteria:**
+
+- [ ] Sorting works automatically. Numbers have higher priority so if user wants a certain folder or prompt to be first he can add a number 1 in front of the Title. This can be changed in Settings where user can for example select alphabetical order as the highest priority or more.
+- [ ] Users can drag and drop items. Dragging a prompt file onto a folder will move that prompt into the folder. Dragging a folder onto another folder will nest it. Manual re-ordering of prompts within a folder via drag-and-drop is not supported; ordering is handled by the sorting rules.
+
+---
+
+## Technical Requirements
+
+### Folder Structure
+templex/
+├── public/
+│   ├── icons/
+│   │   ├── icon16.png
+│   │   ├── icon48.png
+│   │   └── icon128.png
+│   ├── manifest.json
+│   └── sidebar.html
+│
+├── src/
+|   ├── assets/
+│   ├── common/
+│   │   ├── components/
+│   │   │   ├── Button/
+│   │   │   │   ├── Button.tsx
+│   │   │   │   └── Button.module.css
+│   │   │   ├── Input/
+│   │   │   │   ├── Input.tsx
+│   │   │   │   └── Input.module.css
+│   │   │   ├── Modal/
+│   │   │   │   ├── Modal.tsx
+│   │   │   │   └── Modal.module.css
+│   │   │   └── Toast/
+│   │   │       ├── Toast.tsx
+│   │   │       └── Toast.module.css
+│   │   ├── theme/
+│   │   │   ├── ThemeProvider.tsx
+│   │   ├── hooks/
+│   │   │   ├── useLocalStorage.ts
+│   │   │   ├── useTheme.ts
+│   │   │   └── useKeyboardShortcut.ts
+│   │   └── utils/
+│   │       └── storage.ts
+│   │
+│   ├── modules/
+│   │   ├── prompts/
+│   │   │   ├── components/
+│   │   │   │   ├── PromptList.tsx
+│   │   │   │   ├── PromptCard.tsx
+│   │   │   │   ├── PromptEditor.tsx
+│   │   │   │   └── VariableModal.tsx
+│   │   │   ├── hooks/
+│   │   │   │   └── usePrompts.ts
+|   │   │   ├── utils/
+|   │   │   │   └── tokenCounter.ts
+│   │   │   ├── prompts.module.css
+│   │   │   └── types.ts
+│   │   │
+│   │   ├── folders/
+│   │   │   ├── components/
+│   │   │   │   ├── FolderTree.tsx
+│   │   │   │   └── FolderCard.tsx
+│   │   │   ├── hooks/
+│   │   │   │   └── useFolders.ts
+│   │   │   ├── folders.module.css
+│   │   │   └── types.ts
+│   │   │
+│   │   ├── search/
+│   │   │   ├── SearchBar.tsx
+│   │   │   ├── search.module.css
+│   │   │   └── useSearch.ts
+│   │   │
+│   │   └── settings/
+│   │       ├── SettingsPage.tsx
+│   │       ├── settings.module.css
+│   │       └── useSettings.ts
+│   │
+│   ├── sidepanel/
+│   │   ├── Sidebar.tsx
+│   │   ├── Sidebar.module.css
+|   |   ├── main.tsx
+│   │   └── index.css
+│   │
+│   ├── background/
+│   │   └── background.ts
+│   │
+│   ├── content/
+│   │   └── content.ts
+│   │
+│   └── types/
+│       └── index.ts
+│
+├── tsconfig.json
+├── vite.config.ts
+└── package.json
+
+### System Architecture
+
+- **Framework:** React + TypeScript
+- **State Management:** React Hooks (`useContext`, `useState`, `useReducer`)
+- **Storage:** Browser Local Storage (`storage.local` WebExtensions API)
+- **Build Tool:** Vite
+- **Side Panel Implementation:** `<iframe>` with `src="chrome.runtime.getURL('sidebar.html')"` for full isolation and CSP compatibility
+
+---
+
+## Non-Functional Requirements
+
+- **Performance:** UI opens in <500ms, with minimal performance impact on the host page.
+- **Security:** All user data is stored locally on the user's machine. No external transmission of prompts or personal data.
+- **Browser Compatibility:** Chrome, Edge, and other Chromium-based browsers.
+- **Data Privacy:** The extension will request only the minimum permissions necessary for its core functionality.
+
+---
+
+## Assumptions and Dependencies
+
+### Assumptions
+
+- Users are on modern desktop browsers.
+- Users have a basic understanding of how to interact with AI prompts.
+
+### Dependencies
+
+- The in-page injection and save functionalities depend on the DOM structure of target chatbot sites (e.g., ChatGPT, Claude). These features may be subject to breakage if the sites are updated.
+
+---
+
+## Robustness & Error Handling
+
+### Graceful Degradation
+
+- The extension must not crash or break the host page if the DOM structure of a target site changes unexpectedly.
+
+### Injection Failure
+
+- If the "Inject" action fails because the target input field cannot be found, a non-intrusive error notification (e.g., a toast message saying **"Could not inject prompt"**) will appear.
+
+### Injection Fallback
+
+- As a user-friendly fallback for a failed injection, the complete prompt text is automatically copied to the user's clipboard, allowing them to paste it manually.
+
+---
+
+## Scope and Exclusions
+
+### In Scope (MVP)
+
+- All Functional Requirements listed above.
+- Local-only storage of prompts.
+- Compatibility with major Chromium browsers.
+
+### Future Features (Post-MVP)
+
+- Import & Export
+- Prompt-chaining
+</file>
+
+</files>

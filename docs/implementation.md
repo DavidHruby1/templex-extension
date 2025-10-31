@@ -16,6 +16,7 @@ This document outlines the final, step-by-step implementation plan for the Chrom
     * `web_accessible_resources`: Make `sidebar.html` accessible so the `<iframe>` can load it.
     * `action`: Define the icon for `chrome.action.onClicked`.
 * **HTML Files:** Set up `sidebar.html` as the main entry point for the React application.
+* **Absolute Paths:** Set up absolute paths in the Vite config file
 
 ### Definition of Done (DoD)
 
