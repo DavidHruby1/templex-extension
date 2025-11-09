@@ -5,7 +5,6 @@ export type Prompt = {
     createdAt: number;
     tokenCount: number;
     content: string;
-    isDefault: boolean;
 };
 
 export type Folder = {
@@ -15,8 +14,11 @@ export type Folder = {
     createdAt: number;
 }
 
+
+export type Theme = 'light' | 'dark';
+
 export type Settings = {
-    theme: 'light' | 'dark';
+    theme: Theme;
     defaultPromptId: string | null;
     deleteConfirmation: boolean;
     sorting: {
@@ -36,9 +38,28 @@ export type Settings = {
     };
 }
 
-export type StorageData {
+export type StorageData = {
   prompts: Prompt[];
   folders: Folder[];
   settings: Settings;
   storageVersion: number; // key for migration
 }
+
+export type ToastType = 'success' | 'error' | 'info' | 'warning';
+
+export type Toast = {
+    id: string;
+    message: string;
+    type: ToastType;
+    duration?: number;
+}
+
+export type DragItemType = 'prompt' | 'folder';
+
+export type DragItem = {
+    id: string;
+    parentId: string | null;
+    type: DragItemType;
+};
+
+export type VariableValues = Record<string, string>;
