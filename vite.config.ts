@@ -12,7 +12,7 @@ export default defineConfig({
             '@utils': fileURLToPath(new URL('./src/common/utils', import.meta.url)),
             '@modules': fileURLToPath(new URL('./src/modules', import.meta.url)),
             '@assets': fileURLToPath(new URL('./src/assets', import.meta.url)),
-            '@types': fileURLToPath(new URL('./src/types', import.meta.url)),
+            '@app-types': fileURLToPath(new URL('./src/types', import.meta.url)),
         },
     },
     build: {

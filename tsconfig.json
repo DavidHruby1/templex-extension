@@ -12,7 +12,7 @@
             "@modules/*": ["src/modules/*"],
             "@utils/*": ["src/common/utils/*"],
             "@hooks/*": ["src/common/hooks/*"],
-            "@types/*": ["src/types/*"],
+            "@app-types/*": ["src/types/*"],
             "@assets/*": ["src/assets/*"]
         }
     }

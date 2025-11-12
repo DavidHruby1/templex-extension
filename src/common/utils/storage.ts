@@ -2,7 +2,7 @@
 // chrome.storage.local.get(['key'])  // specific key
 // chrome.storage.local.get(null)     // all data
 // erorr handling will be handled by a function I'll make
-import { StorageData, Settings } from "@types/index";
+import { StorageData, Settings } from "@app-types/index";
 
 const mockSettings: Settings = {
     theme: 'dark',
