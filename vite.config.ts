@@ -15,4 +15,20 @@ export default defineConfig({
             '@types': fileURLToPath(new URL('./src/types', import.meta.url)),
         },
     },
+    build: {
+        outDir: 'dist',
+        emptyOutDir: true,
+        rollupOptions: {
+            input: {
+                sidepanel: 'public/sidebar.html', 
+                background: 'src/background/background.ts',
+                content: 'src/content/content.ts',
+            },
+            output: {
+                entryFileNames: '[name].js',
+                chunkFileNames: 'assets/[name]-[hash].js',
+                assetFileNames: 'assets/[name][extname]'
+            }
+        }
+    }
 })
