@@ -8,6 +8,16 @@
     "types": ["vite/client"],
     "skipLibCheck": true,
 
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@components/*": ["src/common/components/*"],
+      "@hooks/*": ["src/common/hooks/*"],
+      "@utils/*": ["src/common/utils/*"],
+      "@modules/*": ["src/modules/*"],
+      "@assets/*": ["src/assets/*"],
+      "@types/*": ["src/types/*"]
+    },
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,

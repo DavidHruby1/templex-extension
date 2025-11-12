@@ -39,10 +39,10 @@ export type Settings = {
 }
 
 export type StorageData = {
-  prompts: Prompt[];
-  folders: Folder[];
-  settings: Settings;
-  storageVersion: number; // key for migration
+    prompts: Prompt[];
+    folders: Folder[];
+    settings: Settings;
+    storageVersion: number; // key for migration
 }
 
 
