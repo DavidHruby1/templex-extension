@@ -45,6 +45,7 @@ export type StorageData = {
   storageVersion: number; // key for migration
 }
 
+
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
 export type Toast = {
@@ -53,6 +54,7 @@ export type Toast = {
     type: ToastType;
     duration?: number;
 }
+
 
 export type DragItemType = 'prompt' | 'folder';
 
