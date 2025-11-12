@@ -4,7 +4,7 @@
 // erorr handling will be handled by a function I'll make
 import type { StorageData, Settings } from "@app-types/index";
 
-const mockSettings: Settings = {
+export const mockSettings: Settings = {
     theme: 'dark',
     defaultPromptId: null,
     deleteConfirmation: true,
@@ -25,7 +25,7 @@ const mockSettings: Settings = {
     },
 }
 
-const storage: StorageData = {
+export const default_storage: StorageData = {
     prompts: [{id: "1", parentId: null, title: "Sample Prompt", createdAt: 1, tokenCount: 10, content: "This is a sample prompt."}],
     folders: [],
     settings: mockSettings,
@@ -33,18 +33,18 @@ const storage: StorageData = {
 };
 
 
-const getPromptData = async (): Promise<StorageData> => {
+export const getPromptData = async (): Promise<void> => {
     try {
-        await promptData = chrome.local.storage.get(null);
+        const promptData: StorageData = await chrome.storage.local.get(null);
         console.log(promptData);
     } catch (error) {
-        console.error("Error getting data: ", error)
+        console.error("Error getting data: ", error);
     }
 }
 
 
 /*
-const savePromptData = async ({key: value}) => {
+export const savePromptData = async ({key: value}) => {
     try {
         await chrome.storage.local.set({key: value});
     } catch (error) {
