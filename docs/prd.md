@@ -117,7 +117,7 @@ Users have an instantly accessible library within their browser. They can save a
 
 **User Story:** As a user, I want a clean and accessible interface to view and manage my prompts without disrupting my workflow.
 
-**Description:** The extension is implemented as a side panel using an `<iframe>` that loads `sidebar.html`. The iframe is injected into the browser's native side panel container and provides full CSS isolation and compatibility even on pages with strict CSP.
+**Description:** The extension is implemented as a side panel using an `<iframe>` that loads `sidebar.html`. The iframe is injected into the browser's site and provides full CSS isolation and compatibility even on pages with strict CSP.
 
 **Acceptance Criteria:**
 

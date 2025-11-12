@@ -23,6 +23,7 @@ export default defineConfig({
                 sidepanel: 'public/sidebar.html', 
                 background: 'src/background/background.ts',
                 content: 'src/content/content.ts',
+                contentStyles: 'src/content/content.css',
             },
             output: {
                 entryFileNames: '[name].js',
