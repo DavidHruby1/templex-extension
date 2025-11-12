@@ -151,6 +151,7 @@ Users have an instantly accessible library within their browser. They can save a
 
 **Acceptance Criteria:**
 
+- [ ] Storage will be implemented using `chrome.storage.local` (export function will be needed to sync with other devices).
 - [ ] **Context Menu:** Right-clicking on selected text on any webpage presents an 'Add to Templex' option.
   - It will show the typical modal with the Title input.
 - [ ] There will also be injected button **"Add prompt"** above the chat window. If a text is written in the chat window, you can create a prompt out of the text. It will normally open the modal with the Title input.
@@ -164,6 +165,7 @@ Users have an instantly accessible library within their browser. They can save a
 - [ ] When title is too long it will be cut and show three dots via the ellipsis effect `text-overflow`. This applies for both folders and prompts.
   - If you resize the sidebar, it will also make the title longer therefore it can become visible fully.
 - [ ] No prompt or folder can have the same name.
+- [ ] Each single prompt will have a limit of 10 000 words per prompt.
 
 #### UI Logic for Adding Prompts (Clarification)
 
